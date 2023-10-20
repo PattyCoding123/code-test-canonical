@@ -1,95 +1,74 @@
-import Image from 'next/image'
-import styles from './page.module.css'
+import styles from "./page.module.scss";
 
-export default function Home() {
+const ENDPOINT_URL =
+  "https://people.canonical.com/~anthonydillon/wp-json/wp/v2/posts.json";
+
+// Function to get all blog posts from the wordpress API
+async function getAllBlogPosts(): Promise<BlogPost[]> {
+  const response = await fetch(ENDPOINT_URL);
+  if (!response.ok) {
+    throw new Error("Network response was not ok");
+  }
+
+  // Return the data as JSON and type as BlogPost (from types.d.ts)
+  const data: BlogPost[] = await response.json();
+
+  return data;
+}
+
+export default async function Home() {
+  // Await blog posts from the API
+  const blogPosts = await getAllBlogPosts();
+
+  // Function to capitalize the first letter of a string
+  const capitalizeString = (s: string) => {
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  };
+
   return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>src/app/page.tsx</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
+    // Add some main padding just for the demo
+    <main className="row" style={{ padding: "1rem" }}>
+      {blogPosts.map((post) => {
+        /**
+         * For each post, get the author, date, category and tag
+         * and display them in the card
+         */
+        const author = post._embedded.author.at(0)?.name;
+        const authorLink = post._embedded.author.at(0)?.link;
+        const date = new Intl.DateTimeFormat("en-GB", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }).format(new Date(post.date));
+        const category = post._embedded["wp:term"][0][0].name;
+        const tag = capitalizeString(post._embedded["wp:term"][1][0].name);
 
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore the Next.js 13 playground.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
+        return (
+          // Create a card for each post, use col-4 for the width of the card in grid
+          <div key={post.id} className="col-4">
+            <div className={`p-card ${styles.card}`}>
+              <div className="p-card__content">
+                <p>{tag.toUpperCase()}</p>
+                <hr className={`is-muted ${styles.hr}`} />
+                <img
+                  className="p-card__image"
+                  style={{ width: "90%", margin: "0 auto" }}
+                  alt="Picture"
+                  src={post.featured_media}
+                />
+                <h4>
+                  <a href={post.link}>{post.title.rendered}</a>
+                </h4>
+                <p className="p-heading--6">
+                  By <a href={authorLink}>{author}</a> on {date}
+                </p>
+                <hr className={`is-muted ${styles.hr}`} />
+                {category === "Articles" ? <p>Article</p> : null}
+              </div>
+            </div>
+          </div>
+        );
+      })}
     </main>
-  )
+  );
 }

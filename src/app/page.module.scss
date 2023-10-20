@@ -1,0 +1,10 @@
+// Add dotted line to the bottom of the hr element
+.hr {
+  border-top: dotted 1px;
+}
+
+// Round card border and add a purple top border
+.card {
+  border-radius: 5px;
+  border-top: 4px solid #77216f;
+}
